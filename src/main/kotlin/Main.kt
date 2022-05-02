@@ -99,14 +99,14 @@ suspend fun <T> runCli(fs: VFS<out T, out Folder>)
                     else {
                         val node = list[command.index - 1]
                         when (node) {
-                            is GDriveFolder -> currentFolder = node
-                            is GDriveFile -> throw Exception("cannot chdir to file")
+                            is Folder -> currentFolder = node
+                            is File -> throw Exception("cannot chdir to file")
                         }
                     }
                 }
                 is Download -> {
                     val node = list[command.index - 1]
-                    if (node !is GDriveFile) throw Exception("cannot download a directory")
+                    if (node !is File || node !is StreamingIO) throw Exception("cannot download a directory")
                     val dlStream = node.readStream()
                     val destPath = Paths.get(command.destPath)
                     if (destPath.exists()) {
@@ -127,7 +127,7 @@ suspend fun <T> runCli(fs: VFS<out T, out Folder>)
                 }
                 is Upload -> {
                     val node = list[command.destIndex - 1]
-                    if (node !is GDriveFile) throw Exception("cannot upload to a directory")
+                    if (node !is File || node !is StreamingIO) throw Exception("cannot upload to a directory")
                     val srcStream = Paths.get(command.srcPath).toFile().readChannel()
                     val channel = ByteChannel()
                     val job = appScope.launch { node.writeStream(channel) }
